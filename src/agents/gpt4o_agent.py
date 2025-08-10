@@ -146,7 +146,24 @@ class GPT4oAgent(BaseAgent):
         2. **Best Practices** (20 points): Does the code follow Terraform and AWS best practices?
         3. **Security** (20 points): Are security best practices implemented?
         4. **Completeness** (20 points): Are all necessary resources and configurations included?
-        5. **Code Quality** (20 points): Is the code well-structured, readable, and maintainable?
+        5. **Code Quality** (15 points): Is the code well-structured, readable, and maintainable?
+        6. **NO DUPLICATE RESOURCES** (5 points): CRITICAL - Check for duplicate resource definitions across all files
+
+        **DUPLICATE RESOURCE DETECTION:**
+        - Scan ALL provided Terraform files for duplicate resource definitions
+        - Flag any resource type + name combinations that appear more than once
+        - Check for duplicate AWS resources that serve the same purpose but have different names
+        - Verify that resource references are consistent and valid
+        - Look for redundant security groups, subnets, VPCs, IAM roles, Lambda functions, etc.
+
+        **SPECIFIC CHECKS:**
+        - VPC: Should only have ONE VPC definition unless multi-VPC architecture is explicitly required
+        - Subnets: No duplicate subnets in the same availability zone and VPC
+        - Security Groups: No duplicate security groups with identical rules
+        - IAM Roles/Policies: No duplicate roles or policies with same permissions
+        - Lambda Functions: No duplicate function definitions
+        - S3 Buckets: No duplicate bucket definitions
+        - DynamoDB Tables: No duplicate table definitions
 
         Provide your evaluation in the following JSON format:
         {{
@@ -156,12 +173,22 @@ class GPT4oAgent(BaseAgent):
                 "best_practices": <0-20>,
                 "security": <0-20>,
                 "completeness": <0-20>,
-                "code_quality": <0-20>
+                "code_quality": <0-15>,
+                "no_duplicates": <0-5>
             }},
+            "duplicate_resources": [
+                {{
+                    "resource_type": "aws_security_group",
+                    "resource_names": ["sg_example1", "sg_example2"],
+                    "files": ["security.tf", "compute.tf"],
+                    "issue": "Duplicate security groups with similar rules"
+                }}
+            ],
             "strengths": ["list of strengths"],
             "weaknesses": ["list of weaknesses"],
             "security_concerns": ["list of security issues if any"],
-            "recommendations": ["list of improvement recommendations"],
+            "duplicate_issues": ["list of specific duplicate resource problems"],
+            "recommendations": ["list of improvement recommendations including duplicate resolution"],
             "pass_threshold": <true/false for score >= 80>
         }}
         """
