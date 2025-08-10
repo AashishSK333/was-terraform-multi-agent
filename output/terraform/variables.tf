@@ -1,7 +1,13 @@
 variable "aws_region" {
-  description = "AWS region"
+  description = "AWS region for resource deployment"
   type        = string
   default     = "ap-southeast-1"
+}
+
+variable "environment" {
+  description = "Deployment environment"
+  type        = string
+  default     = "prod"
 }
 
 variable "vpc_cidr" {
@@ -20,16 +26,4 @@ variable "lambda_runtime" {
   description = "Runtime for Lambda functions"
   type        = string
   default     = "python3.9"
-}
-
-variable "environment" {
-  description = "Environment name"
-  type        = string
-  default     = "prod"
-}
-
-variable "project_name" {
-  description = "Project name for resource naming"
-  type        = string
-  default     = "rag"
 }

@@ -1,5 +1,5 @@
 resource "aws_security_group" "endpoint" {
-  name        = "sg-endpoint"
+  name        = "rag-endpoint-sg"
   description = "Security group for VPC endpoints"
   vpc_id      = aws_vpc.rag_vpc.id
 
@@ -12,20 +12,20 @@ resource "aws_security_group" "endpoint" {
 }
 
 resource "aws_security_group" "lambda" {
-  name        = "sg-lambda"
+  name        = "rag-lambda-sg"
   description = "Security group for Lambda functions"
   vpc_id      = aws_vpc.rag_vpc.id
 
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
-resource "aws_iam_role" "ingestion_lambda" {
-  name = "ingestion-lambda-role"
+resource "aws_iam_role" "lambda_ingestion" {
+  name = "lambda-ingestion-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -39,8 +39,8 @@ resource "aws_iam_role" "ingestion_lambda" {
   })
 }
 
-resource "aws_iam_role" "processing_lambda" {
-  name = "processing-lambda-role"
+resource "aws_iam_role" "lambda_processing" {
+  name = "lambda-processing-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -54,4 +54,4 @@ resource "aws_iam_role" "processing_lambda" {
   })
 }
 
-# Add necessary IAM policies for the roles
+# IAM policies will continue in the next section...
