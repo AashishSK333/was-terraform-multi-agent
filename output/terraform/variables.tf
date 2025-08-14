@@ -1,13 +1,19 @@
-variable "aws_region" {
-  description = "AWS region for resource deployment"
+variable "project_name" {
+  description = "The name of the project for resource naming and tagging"
   type        = string
-  default     = "ap-southeast-1"
+  default     = "rag"
 }
 
 variable "environment" {
-  description = "Deployment environment"
+  description = "The deployment environment (dev, staging, prod)"
   type        = string
-  default     = "prod"
+  default     = "dev"
+}
+
+variable "aws_region" {
+  description = "The AWS region to deploy resources in"
+  type        = string
+  default     = "ap-southeast-1"
 }
 
 variable "vpc_cidr" {

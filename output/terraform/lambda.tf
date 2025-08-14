@@ -1,70 +1,66 @@
-resource "aws_lambda_function" "ingestion" {
-  filename      = "lambda_ingestion.zip"
-  function_name = "data-ingestion-service"
-  role          = aws_iam_role.lambda_ingestion.arn
-  handler       = "app.handler"
-  runtime       = var.lambda_runtime
+resource "aws_lambda_function" "data_ingestion" {
+  filename         = "lambda_functions/data_ingestion.zip"
+  function_name    = "${var.project_name}-data-ingestion-service"
+  role            = aws_iam_role.lambda_ingestion.arn
+  handler         = "app.handler"
+  runtime         = var.lambda_runtime
 
   vpc_config {
     subnet_ids         = [aws_subnet.private.id]
-    security_group_ids = [aws_security_group.lambda.id]
-  }
-
-  environment {
-    variables = {
-      INGESTION_QUEUE_URL = aws_sqs_queue.ingestion.url
-    }
+    security_group_ids = [aws_security_group.vpc_endpoints.id]
   }
 }
 
-resource "aws_lambda_function" "extract" {
-  filename      = "lambda_extract.zip"
-  function_name = "data-extract-service"
-  role          = aws_iam_role.lambda_processing.arn
-  handler       = "app.handler"
-  runtime       = var.lambda_runtime
+resource "aws_lambda_function" "data_extract" {
+  filename         = "lambda_functions/data_extract.zip"
+  function_name    = "${var.project_name}-data-extract-service"
+  role            = aws_iam_role.lambda_processing.arn
+  handler         = "app.handler"
+  runtime         = var.lambda_runtime
 
   vpc_config {
     subnet_ids         = [aws_subnet.private.id]
-    security_group_ids = [aws_security_group.lambda.id]
-  }
-
-  environment {
-    variables = {
-      CHUNK_QUEUE_URL = aws_sqs_queue.chunk.url
-      S3_BUCKET       = aws_s3_bucket.data_store.id
-    }
+    security_group_ids = [aws_security_group.vpc_endpoints.id]
   }
 }
 
-resource "aws_lambda_function" "chunk" {
-  filename      = "lambda_chunk.zip"
-  function_name = "data-chunk-service"
-  role          = aws_iam_role.lambda_processing.arn
-  handler       = "app.handler"
-  runtime       = var.lambda_runtime
+resource "aws_lambda_function" "data_chunk" {
+  filename         = "lambda_functions/data_chunk.zip"
+  function_name    = "${var.project_name}-data-chunk-service"
+  role            = aws_iam_role.lambda_processing.arn
+  handler         = "app.handler"
+  runtime         = var.lambda_runtime
 
   vpc_config {
     subnet_ids         = [aws_subnet.private.id]
-    security_group_ids = [aws_security_group.lambda.id]
-  }
-
-  environment {
-    variables = {
-      DYNAMODB_TABLE = aws_dynamodb_table.chunks.id
-      S3_BUCKET      = aws_s3_bucket.data_store.id
-    }
+    security_group_ids = [aws_security_group.vpc_endpoints.id]
   }
 }
 
-resource "aws_lambda_event_source_mapping" "extract_trigger" {
-  event_source_arn = aws_sqs_queue.ingestion.arn
-  function_name    = aws_lambda_function.extract.arn
+resource "aws_lambda_event_source_mapping" "ingestion_queue" {
+  event_source_arn = aws_sqs_queue.new_ingestion.arn
+  function_name    = aws_lambda_function.data_extract.arn
   batch_size       = 1
 }
 
-resource "aws_lambda_event_source_mapping" "chunk_trigger" {
-  event_source_arn = aws_sqs_queue.chunk.arn
-  function_name    = aws_lambda_function.chunk.arn
+resource "aws_lambda_event_source_mapping" "chunk_queue" {
+  event_source_arn = aws_sqs_queue.new_chunk.arn
+  function_name    = aws_lambda_function.data_chunk.arn
   batch_size       = 1
+}
+
+resource "aws_cloudwatch_event_target" "ingestion_trigger" {
+  rule      = aws_cloudwatch_event_rule.ingestion_trigger.name
+  target_id = "LambdaIngestion"
+  arn       = aws_lambda_function.data_ingestion.arn
+  event_bus_name = aws_cloudwatch_event_bus.main.name
+}
+
+resource "aws_cloudwatch_event_rule" "ingestion_trigger" {
+  name           = "${var.project_name}-ingestion-trigger"
+  event_bus_name = aws_cloudwatch_event_bus.main.name
+  
+  event_pattern = jsonencode({
+    source = ["rag.generation"]
+  })
 }
